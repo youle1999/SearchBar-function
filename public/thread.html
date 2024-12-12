@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thread Details</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1 id="threadTitle">Thread Details</h1>
+    <div><a href="index.html">← Back to List</a></div>
+    <ul id="messages"></ul>
+    <div>
+      <input type="text" id="messageInput" placeholder="Enter a message">
+      <button id="sendMessage">Send</button>
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const threadId = new URLSearchParams(window.location.search).get("id");
+      const messagesList = document.getElementById("messages");
+      const threadTitleElem = document.getElementById("threadTitle");
+
+      async function loadThread() {
+        const res = await fetch(`/api/threads/${threadId}`);
+        const thread = await res.json();
+        threadTitleElem.textContent = thread.title;
+        messagesList.innerHTML = "";
+        thread.messages.forEach((msg) => {
+          const li = document.createElement("li");
+          li.textContent = msg.text;
+          messagesList.appendChild(li);
+        });
+      }
+
+      document.getElementById("sendMessage").addEventListener("click", async () => {
+        const text = document.getElementById("messageInput").value;
+        if (!text) return alert("Please enter a message");
+        await fetch(`/api/threads/${threadId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        document.getElementById("messageInput").value = "";
+        loadThread();
+      });
+
+      loadThread();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thread List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Thread List</h1>
+    <div>
+      <input type="text" id="threadTitle" placeholder="New thread title">
+      <button id="createThread">Create</button>
+    </div>
+    <div>
+      <input type="text" id="searchBar" placeholder="Search threads">
+    </div>
+    <div>
+      <select id="sortOrder">
+        <option value="new">新しい順番</option>
+        <option value="old">古い順番 </option>
+      </select>
+    </div>
+    <ul id="threads"></ul>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const threadsList = document.getElementById("threads");
+      const searchBar = document.getElementById("searchBar");
+      const sortOrder = document.getElementById("sortOrder");
+
+      let allThreads = []; // filtering and sorting
+
+      
+      async function loadThreads() {
+        const res = await fetch("/api/threads");
+        allThreads = await res.json();
+        updateDisplayedThreads(); 
+      }
+
+      // display 
+      function displayThreads(threads) {
+        threadsList.innerHTML = "";
+        threads.forEach((thread) => {
+          const li = document.createElement("li");
+          li.innerHTML = `<a href="thread.html?id=${thread.id}">${thread.title}</a>`;
+          threadsList.appendChild(li);
+        });
+      }
+
+   
+      function updateDisplayedThreads() {
+        const searchTerm = searchBar.value.toLowerCase();
+        const filteredThreads = allThreads.filter(thread =>
+          thread.title.toLowerCase().includes(searchTerm)
+        );
+
+        // filtered 
+        const sortedThreads = filteredThreads.sort((a, b) => {
+          if (sortOrder.value === "new") {
+            return b.id - a.id; // New to Old 
+          } else {
+            return a.id - b.id; // Old to New 
+          }
+        });
+
+        displayThreads(sortedThreads);
+      }
+
+      // Event listener for the Create button
+      document.getElementById("createThread").addEventListener("click", async () => {
+        const title = document.getElementById("threadTitle").value;
+        if (!title) return alert("Please enter a title");
+        await fetch("/api/threads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+        document.getElementById("threadTitle").value = "";
+        loadThreads();
+      });
+
+      // Search bar
+      searchBar.addEventListener("input", updateDisplayedThreads);
+
+      //  dropdown
+      sortOrder.addEventListener("change", updateDisplayedThreads);
+
+      loadThreads();
+    });
+  </script>
+</body>
+</html>
